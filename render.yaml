@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: wedding-photo-app
+    name: wedding-francesco-marta
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt
@@ -13,6 +13,6 @@ services:
       - key: ADMIN_PASSWORD
         value: Framart26
       - key: PUBLIC_URL
-        value: https://wedding-Francesco&Marta.onrender.com
+        value: https://wedding-francesco-marta.onrender.com
       - key: COUPLE_NAMES
         value: Francesco e Marta
