@@ -1,0 +1,8 @@
+uploads/
+*.zip
+photos.json
+qr_url.txt
+__pycache__/
+*.pyc
+.venv/
+venv/

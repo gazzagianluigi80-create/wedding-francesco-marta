@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Il Matrimonio di {{ couple }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<main class="container center">
+  <div class="gold-line"></div>
+  <h1 class="serif">Il Matrimonio di {{ couple }}</h1>
+  <p class="subtitle">26 Ottobre 2026 · Triggiano (BA)</p>
+  <p class="tagline">Dal viaggio da Veglie e Campi Salentina alla festa: condividi con noi i tuoi scatti.</p>
+  <a class="btn big" href="{{ url_for('upload') }}">Entra e carica le tue foto</a>
+  <p class="links">
+    <a href="{{ url_for('gallery') }}">Vai alla galleria</a> ·
+    <a href="{{ url_for('qr_page') }}">QR code per i tavoli</a>
+  </p>
+  <img src="{{ url_for('qr_png') }}" alt="QR code" class="qr-small" loading="lazy">
+  <p class="muted small">{{ public_url }}/upload</p>
+</main>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin · Matrimonio</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<main class="container">
+  <h1 class="serif">Pannello admin</h1>
+  {% if need_password %}
+  <form method="post" class="card">
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <input type="password" name="password" placeholder="Password admin" required>
+    <button class="btn" type="submit">Accedi</button>
+  </form>
+  {% else %}
+  <div class="alert">⚠️ Render free ha filesystem effimero: si cancella a ogni riavvio. <strong>Scarica lo ZIP spesso durante la festa!</strong></div>
+  <div class="card">
+    <p><strong>{{ total }}</strong> foto totali · <strong>{{ size }}</strong> occupati</p>
+    <p class="muted small">URL pubblico: {{ public_url }}/upload</p>
+    <a class="btn" href="{{ url_for('admin_download') }}">Scarica tutte le foto in ZIP</a>
+    <a class="btn secondary" href="{{ url_for('qr_page') }}" target="_blank">Vedi QR</a>
+    <a class="btn secondary" href="{{ url_for('admin_logout') }}">Esci</a>
+  </div>
+  <form method="post" action="{{ url_for('admin_set_url') }}" class="card">
+    <h3>Cambia URL del QR code</h3>
+    <input type="url" name="public_url" value="{{ public_url }}" required>
+    <button class="btn" type="submit">Rigenera QR code</button>
+  </form>
+  <h3>Foto caricate — cancella per moderazione</h3>
+  {% if photos %}
+  <div class="admin-grid">
+    {% for p in photos %}
+    <div class="admin-photo">
+      <img src="{{ url_for('serve_upload', filename=p.filename) }}" alt="Foto" loading="lazy">
+      <div class="small">{{ p.name or 'Anonimo' }} · {{ p.momento or '—' }}<br>{{ p.datetime }}</div>
+      <form method="post" action="{{ url_for('admin_delete', filename=p.filename) }}" onsubmit="return confirm('Eliminare {{ p.filename }}?')">
+        <button class="btn danger small-btn" type="submit">Cancella</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted">Nessuna foto caricata.</p>
+  {% endif %}
+  <p class="links"><a href="{{ url_for('gallery') }}">Apri galleria (se admin, trovi Cancella anche lì) →</a></p>
+  {% endif %}
+</main>
+</body>
+</html>

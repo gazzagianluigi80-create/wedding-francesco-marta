@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carica foto · {{ couple }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<main class="container">
+  <div class="gold-line"></div>
+  <h1 class="serif">Condividi le tue foto</h1>
+  <p class="muted">Dal viaggio alla festa, aiutaci a raccogliere ogni momento.</p>
+  <p class="links"><a href="{{ url_for('landing') }}">← Home</a> · <a href="{{ url_for('gallery') }}">Galleria</a></p>
+
+  {% if need_password %}
+  <form method="post" class="card">
+    <h2 class="serif">Inserisci la password evento</h2>
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <p class="muted small">La trovi nel messaggio WhatsApp degli sposi.</p>
+    <input type="password" name="password" placeholder="Password evento" required autocomplete="off">
+    <input type="hidden" name="next" value="{{ next_url }}">
+    <button class="btn big" type="submit">Entra</button>
+  </form>
+  {% elif success %}
+  <div class="card center">
+    <h2 class="serif">Grazie! 💛</h2>
+    <p>Le tue {{ saved_count }} foto sono state caricate.</p>
+    {% if errors %}<ul class="error small">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+    <a class="btn big" href="{{ url_for('upload') }}">Carica altre foto</a>
+    <p class="links"><a href="{{ url_for('gallery') }}">Vedi la galleria →</a></p>
+  </div>
+  {% else %}
+  <form id="uploadForm" method="post" enctype="multipart/form-data" class="card">
+    <label class="field">Le tue foto (puoi selezionarne tante)
+      <input type="file" id="photos" name="photos" accept="image/*" multiple required>
+    </label>
+    <div id="preview" class="preview"></div>
+    <label class="field">Il tuo nome (facoltativo)
+      <input type="text" name="name" maxlength="60" placeholder="Es. Zia Maria">
+    </label>
+    <label class="field">Momento (facoltativo)
+      <select name="momento">
+        <option value="">— Scegli il momento —</option>
+        {% for m in momentis %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="field">Didascalia (facoltativo, max 140)
+      <input type="text" name="caption" maxlength="140" placeholder="Un ricordo di questo momento…">
+    </label>
+    <button class="btn big" type="submit">Carica le foto</button>
+    <div id="progress" class="progress hidden"><div id="bar"></div></div>
+    <p id="status" class="muted small"></p>
+  </form>
+  {% endif %}
+</main>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

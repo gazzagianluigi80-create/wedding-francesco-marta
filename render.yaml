@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: wedding-photo-app
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: EVENT_PASSWORD
+        value: 26ottobre2026
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: PUBLIC_URL
+        sync: false
+      - key: COUPLE_NAMES
+        value: Francesco e Marta

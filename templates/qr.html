@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QR code · {{ couple }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+@media print { .no-print { display:none; } body { background:#fff; } }
+.wedding-hero { margin-bottom: 6px; }
+.rings { width: 120px; height: 80px; }
+.date-badge { display: inline-block; border: 1px solid var(--gold); color: var(--gold);
+  border-radius: 999px; padding: 6px 16px; font-size: .85rem; letter-spacing: .08em;
+  font-weight: 600; margin: 8px 0 2px; }
+.couple-names { font-size: 2rem; margin: 6px 0 2px; }
+.floral { color: var(--gold); letter-spacing: .5em; margin: 4px 0 10px; }
+.qr-card { background: #fff; border: 2px solid var(--gold); border-radius: 20px;
+  padding: 18px; display: inline-block; box-shadow: 0 8px 30px rgba(0,0,0,.08); margin-top: 8px; }
+.qr-card img { width: min(70vw, 300px); display: block; }
+</style>
+</head>
+<body>
+<main class="container center">
+  <div class="wedding-hero">
+    <!-- Due fedi intrecciate + cuoricino -->
+    <svg class="rings" viewBox="0 0 120 80" aria-hidden="true">
+      <circle cx="45" cy="45" r="26" fill="none" stroke="#C9A96A" stroke-width="5"/>
+      <circle cx="75" cy="45" r="26" fill="none" stroke="#C9A96A" stroke-width="5"/>
+      <polygon points="45,12 49,20 45,28 41,20" fill="#C9A96A"/>
+      <path d="M60 8 c-2-4-8-4-8 0 c0 3 4 6 8 9 c4-3 8-6 8-9 c0-4-6-4-8 0z" fill="#C9A96A"/>
+    </svg>
+    <div style="font-size:2rem; line-height:1">🤵 💒 👰</div>
+    <div class="date-badge">26 OTTOBRE 2026 · TRIGGIANO (BA)</div>
+  </div>
+  <h1 class="serif couple-names">Il Matrimonio di {{ couple }}</h1>
+  <div class="floral">❦ ❦ ❦</div>
+  <div class="qr-card">
+    <img src="{{ url_for('qr_png') }}" alt="QR code matrimonio">
+  </div>
+  <p class="tagline">Inquadra il codice e carica le tue foto!<br>Dal viaggio alla festa, aiutaci a raccogliere ogni momento.</p>
+  <p class="muted">{{ public_url }}/upload</p>
+  <p class="no-print"><a class="btn big" href="{{ url_for('qr_download') }}">Scarica QR code in PNG</a></p>
+  <p class="links no-print"><a href="{{ url_for('landing') }}">← Home</a></p>
+</main>
+</body>
+</html>

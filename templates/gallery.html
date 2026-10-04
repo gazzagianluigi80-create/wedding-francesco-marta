@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Galleria · {{ couple }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<main class="container wide">
+  <div class="gold-line"></div>
+  <h1 class="serif">Galleria condivisa</h1>
+  <p class="muted"><span id="count">0</span> foto · si aggiorna da sola ogni 10 secondi</p>
+  <p class="links"><a href="{{ url_for('upload') }}">+ Carica foto</a> · <a href="{{ url_for('landing') }}">Home</a></p>
+  <label class="field inline">Filtra per momento:
+    <select id="filter">
+      <option value="">Tutti i momenti</option>
+      {% for m in momentis %}<option value="{{ m }}" {% if m==active_filter %}selected{% endif %}>{{ m }}</option>{% endfor %}
+    </select>
+  </label>
+  <div id="grid" class="masonry"></div>
+  <div id="lightbox" class="lightbox hidden">
+    <button id="close" aria-label="Chiudi">✕</button>
+    <img id="lb-img" src="" alt="Foto matrimonio">
+    <div class="lb-meta"><strong id="lb-name"></strong><p id="lb-cap"></p><small id="lb-date"></small></div>
+    {% if is_admin %}
+    <form id="lb-del" method="post" action="" onsubmit="return confirm('Eliminare questa foto?')">
+      <button class="btn danger" type="submit">Cancella foto</button>
+    </form>
+    {% endif %}
+  </div>
+</main>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+<script>initGallery(document.getElementById('filter').value);</script>
+</body>
+</html>
