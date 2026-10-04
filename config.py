@@ -7,13 +7,13 @@ COUPLE_NAMES = os.getenv("COUPLE_NAMES", "Francesco e Marta")
 EVENT_PASSWORD = os.getenv("EVENT_PASSWORD", "26ottobre2026")
 
 # --- Password admin (solo organizzatori) ---
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin26ottobre")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "Framart26")
 
 # --- Chiave sessione cookie (cambiala in produzione via env SECRET_KEY) ---
 SECRET_KEY = os.getenv("SECRET_KEY", "cambia-questa-chiave-matrimonio-2026")
 
 # --- URL pubblico dell'app (usato per il QR code). Cambiabile da /admin ---
-PUBLIC_URL = os.getenv("PUBLIC_URL", "https://wedding-photo-app.onrender.com")
+PUBLIC_URL = os.getenv("PUBLIC_URL", "https://wedding-Francesco&Marta.onrender.com")
 
 # --- Compressione immagini ---
 MAX_SIDE = int(os.getenv("MAX_SIDE", "1920"))
