@@ -81,7 +81,14 @@ function initGallery(initialFilter) {
       img.src = '/uploads/' + encodeURIComponent(p.filename);
       img.alt = p.caption || 'Foto matrimonio';
       const cap = document.createElement('figcaption');
-      cap.textContent = (p.name ? p.name + ' · ' : '') + (p.momento || '');
+      const line1 = document.createElement('div');
+      line1.className = 'pol-cap';
+      line1.textContent = p.caption || p.momento || '♥';
+      const line2 = document.createElement('div');
+      line2.className = 'pol-meta';
+      const d = (p.datetime || '').replace('T', ' ').slice(0, 16);
+      line2.textContent = (p.name || 'Anonimo') + (d ? ' · ' + d : '');
+      cap.appendChild(line1); cap.appendChild(line2);
       fig.appendChild(img); fig.appendChild(cap);
       fig.onclick = () => {
         document.getElementById('lb-img').src = img.src;

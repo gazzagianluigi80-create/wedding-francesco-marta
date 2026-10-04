@@ -7,12 +7,31 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
-<body>
-<main class="container center">
+<body class="landing-bg">
+<main class="container center wedding-landing wedding-card">
+  <div class="wedding-hero">
+    <!-- Due anelli incastonati fra loro (SVG, nessuno sfondo a quadretti) -->
+    <svg class="rings" viewBox="0 0 160 100" aria-hidden="true">
+      <defs>
+        <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#E3C888"/>
+          <stop offset=".5" stop-color="#C9A96A"/>
+          <stop offset="1" stop-color="#A8843F"/>
+        </linearGradient>
+      </defs>
+      <circle cx="62" cy="56" r="32" fill="none" stroke="url(#gold)" stroke-width="7"/>
+      <circle cx="98" cy="56" r="32" fill="none" stroke="url(#gold)" stroke-width="7"/>
+      <!-- archetto sopra per effetto intreccio -->
+      <path d="M 78 76 A 32 32 0 0 0 90 83" fill="none" stroke="url(#gold)" stroke-width="7" stroke-linecap="round"/>
+      <polygon points="62,14 66,22 62,30 58,22" fill="#C9A96A"/>
+      <polygon points="98,14 102,22 98,30 94,22" fill="#C9A96A"/>
+    </svg>
+  </div>
   <div class="gold-line"></div>
-  <h1 class="serif">Il Matrimonio di {{ couple }}</h1>
+  <h1 class="serif couple-names">Il Matrimonio di {{ couple }}</h1>
+  <div class="floral">❦ ❦ ❦</div>
   <p class="subtitle">26 Ottobre 2026 · Triggiano (BA)</p>
-  <p class="tagline">Dal viaggio da Veglie e Campi Salentina alla festa: condividi con noi i tuoi scatti.</p>
+  <p class="tagline">Dal viaggio da Veglie e Campi Salentina alla festa:<br>condividi con noi i tuoi scatti.</p>
   <a class="btn big" href="{{ url_for('upload') }}">Entra e carica le tue foto</a>
   <p class="links">
     <a href="{{ url_for('gallery') }}">Vai alla galleria</a> ·
