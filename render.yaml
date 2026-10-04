@@ -11,7 +11,7 @@ services:
       - key: EVENT_PASSWORD
         value: 26ottobre2026
       - key: ADMIN_PASSWORD
-        value: Framart26
+        value: Framart@26
       - key: PUBLIC_URL
         value: https://wedding-francesco-marta.onrender.com
       - key: COUPLE_NAMES

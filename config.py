@@ -7,7 +7,7 @@ COUPLE_NAMES = os.getenv("COUPLE_NAMES", "Francesco e Marta")
 EVENT_PASSWORD = os.getenv("EVENT_PASSWORD", "26ottobre2026")
 
 # --- Password admin (solo organizzatori) ---
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "Framart26")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "Framart@26")
 
 # --- Chiave sessione cookie (cambiala in produzione via env SECRET_KEY) ---
 SECRET_KEY = os.getenv("SECRET_KEY", "cambia-questa-chiave-matrimonio-2026")
