@@ -33,9 +33,16 @@
   </div>
   {% else %}
   <form id="uploadForm" method="post" enctype="multipart/form-data" class="card">
-    <label class="field">Le tue foto (puoi selezionarne tante)
-      <input type="file" id="photos" name="photos" accept="image/*" multiple required>
-    </label>
+    <p class="field">Aggiungi le tue foto</p>
+    <p class="muted small">Scegli dalla galleria o scatta al volo — puoi aggiungerne quante vuoi.</p>
+    <div class="pick-actions">
+      <label class="btn secondary">📁 Scegli dalla galleria
+        <input type="file" id="photos" name="photos" accept="image/*" multiple hidden>
+      </label>
+      <label class="btn">📷 Scatta foto
+        <input type="file" id="camera" name="photos" accept="image/*" capture="environment" hidden>
+      </label>
+    </div>
     <div id="preview" class="preview"></div>
     <label class="field">Il tuo nome (facoltativo)
       <input type="text" name="name" maxlength="60" placeholder="Es. Zia Maria">

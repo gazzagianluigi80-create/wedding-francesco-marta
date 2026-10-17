@@ -1,21 +1,29 @@
 // Upload con progress + preview
 const form = document.getElementById('uploadForm');
 if (form) {
-  const input = document.getElementById('photos');
+  const inputs = ['photos', 'camera']
+    .map(id => document.getElementById(id))
+    .filter(Boolean);
   const preview = document.getElementById('preview');
-  input.addEventListener('change', () => {
+  const allFiles = () => inputs.flatMap(i => [...i.files]);
+  const renderPreview = () => {
     preview.innerHTML = '';
-    [...input.files].slice(0, 12).forEach(f => {
+    allFiles().slice(0, 12).forEach(f => {
       const img = document.createElement('img');
       img.src = URL.createObjectURL(f);
       preview.appendChild(img);
     });
-  });
+  };
+  inputs.forEach(i => i.addEventListener('change', renderPreview));
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const bar = document.getElementById('bar');
     const prog = document.getElementById('progress');
     const status = document.getElementById('status');
+    if (!allFiles().length) {
+      status.textContent = 'Aggiungi almeno una foto (galleria o fotocamera).';
+      return;
+    }
     prog.classList.remove('hidden');
     const xhr = new XMLHttpRequest();
     xhr.open('POST', form.action || window.location.pathname);
@@ -29,6 +37,7 @@ if (form) {
         if (r.ok) {
           status.textContent = `Grazie! ${r.count} foto caricate. 💛`;
           form.reset(); preview.innerHTML = ''; bar.style.width = '0';
+          prog.classList.add('hidden');
           const a = document.createElement('p');
           a.innerHTML = '<a href="/gallery">Vedi la galleria →</a> · <a href="/upload">Carica altre foto</a>';
           status.appendChild(a);
