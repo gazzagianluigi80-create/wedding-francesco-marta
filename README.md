@@ -1,7 +1,8 @@
 # Wedding Photo App — 26 Ottobre 2026 · Triggiano (BA)
 
 Web app leggera per ~80 invitati: dal viaggio Veglie / Campi Salentina → Triggiano alla festa.
-Accesso via QR code, nessuna registrazione, solo password evento.
+Accesso via QR code, nessuna registrazione e nessuna password: chi inquadra il QR carica subito.
+(Solo l'area `/admin` è protetta da password.)
 
 ## 1. Test in locale
 
@@ -15,15 +16,18 @@ python app.py
 
 Apri poi:
 - http://127.0.0.1:5000/ → landing
-- http://127.0.0.1:5000/upload → password evento `26ottobre2026`
-- http://127.0.0.1:5000/gallery → galleria
+- http://127.0.0.1:5000/upload → carica foto (nessuna password)
+- http://127.0.0.1:5000/gallery → galleria (nessuna password)
 - http://127.0.0.1:5000/qr → pagina QR stampabile
-- http://127.0.0.1:5000/admin → password admin `admin26ottobre`
+- http://127.0.0.1:5000/admin → password admin (default `Framart@26`)
 
-Per cambiare nomi/password in locale modifica `config.py` oppure usa env:
+Per cambiare i nomi in locale modifica `config.py` oppure usa env:
 ```powershell
-$env:COUPLE_NAMES="Francesco e Marta"; $env:EVENT_PASSWORD="26ottobre2026"; python app.py
+$env:COUPLE_NAMES="Francesco e Marta"; python app.py
 ```
+
+La password evento è **disattivata**: chi apre il QR carica e guarda senza inserire nulla.
+Per riattivarla, imposta le env `REQUIRE_EVENT_PASSWORD=1` e `EVENT_PASSWORD=<password>`.
 
 ## 2. Deploy su Render (piano free)
 
@@ -35,8 +39,8 @@ $env:COUPLE_NAMES="Francesco e Marta"; $env:EVENT_PASSWORD="26ottobre2026"; pyth
    - Environment: Python 3
 4. Environment Variables:
    - `SECRET_KEY` = stringa lunga casuale
-   - `EVENT_PASSWORD` = `26ottobre2026`
    - `ADMIN_PASSWORD` = password segreta solo sposi
+   - (opzionale) `REQUIRE_EVENT_PASSWORD` = `1` e `EVENT_PASSWORD` = password evento per riattivare la protezione
    - `PUBLIC_URL` = URL pubblico Render (es. `https://wedding-photo-app.onrender.com`)
    - `COUPLE_NAMES` = `Francesco e Marta`
 5. Deploy. In alternativa il `render.yaml` già incluso configura tutto.
@@ -56,7 +60,7 @@ $env:COUPLE_NAMES="Francesco e Marta"; $env:EVENT_PASSWORD="26ottobre2026"; pyth
 ## 4. Checklist giorno del matrimonio
 
 - [ ] Render attivo (apri landing da cellulare con 4G, no Wi-Fi casa).
-- [ ] Password evento comunicata via WhatsApp agli invitati.
+- [ ] Nessuna password da comunicare: il QR apre direttamente l'upload.
 - [ ] QR stampato e testato, link fallback leggibile.
 - [ ] Prova upload reale: 3 foto da 2 telefoni → verifica compressione, galleria, filtro Momento.
 - [ ] Spazio e contatore visibili in `/admin`.

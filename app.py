@@ -62,7 +62,7 @@ def save_photos(photos):
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
-        if not session.get("authed"):
+        if config.REQUIRE_EVENT_PASSWORD and not session.get("authed"):
             # Le chiamate fetch si aspettano JSON, non un redirect HTML
             if request.path.startswith("/api/"):
                 return jsonify({"ok": False, "error": "login_required"}), 401
@@ -164,7 +164,11 @@ def qr_download():
 @app.route("/upload", methods=["GET", "POST"])
 def upload():
     if request.method == "POST" and "password" in request.form and "photos" not in request.files:
-        # Tentativo di login evento
+        # Tentativo di login evento (solo se la password è attiva)
+        if not config.REQUIRE_EVENT_PASSWORD:
+            session["authed"] = True
+            nxt = request.args.get("next") or request.form.get("next") or url_for("upload")
+            return redirect(nxt)
         if request.form.get("password", "") == config.EVENT_PASSWORD:
             session["authed"] = True
             nxt = request.args.get("next") or request.form.get("next") or url_for("upload")
@@ -174,7 +178,7 @@ def upload():
                                error="Password non corretta. Chiedila agli sposi.",
                                next_url=request.args.get("next", "")), 403
 
-    if not session.get("authed"):
+    if config.REQUIRE_EVENT_PASSWORD and not session.get("authed"):
         return render_template("upload.html", couple=config.COUPLE_NAMES,
                                momentis=config.MOMENTI, need_password=True,
                                next_url=request.args.get("next", ""))
@@ -252,7 +256,7 @@ def api_photos():
 
 @app.route("/uploads/<path:filename>")
 def serve_upload(filename):
-    if not session.get("authed") and not session.get("admin"):
+    if config.REQUIRE_EVENT_PASSWORD and not session.get("authed") and not session.get("admin"):
         return redirect(url_for("upload", next=request.path))
     return send_from_directory(config.UPLOAD_FOLDER, filename)
 

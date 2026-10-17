@@ -3,7 +3,10 @@ import os
 # --- Nomi degli sposi (modifica qui) ---
 COUPLE_NAMES = os.getenv("COUPLE_NAMES", "Francesco e Marta")
 
-# --- Password evento condivisa via WhatsApp ---
+# --- Password evento ---
+# Di default NON è richiesta: chi apre dal QR carica e guarda subito, senza password.
+# Per riattivarla: imposta REQUIRE_EVENT_PASSWORD=1 e EVENT_PASSWORD=<password>.
+REQUIRE_EVENT_PASSWORD = os.getenv("REQUIRE_EVENT_PASSWORD", "").lower() in ("1", "true", "yes", "on")
 EVENT_PASSWORD = os.getenv("EVENT_PASSWORD", "26ottobre2026")
 
 # --- Password admin (solo organizzatori) ---
