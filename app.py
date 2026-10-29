@@ -1,8 +1,8 @@
+import hashlib
 import io
 import json
 import os
 import random
-import threading
 import zipfile
 from datetime import datetime
 from functools import wraps
@@ -16,14 +16,15 @@ from PIL import Image, ImageOps
 from werkzeug.utils import secure_filename
 
 import config
+import storage
 
 app = Flask(__name__)
 app.secret_key = config.SECRET_KEY
-app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50 MB per request (multi-file)
+app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50 MB per request
 
 os.makedirs(config.UPLOAD_FOLDER, exist_ok=True)
 
-_lock = threading.Lock()
+store = storage.get_store()
 
 
 # ---------- Helpers ----------
@@ -41,32 +42,25 @@ def get_public_url():
     return config.PUBLIC_URL.rstrip("/")
 
 
-def load_photos():
-    if not os.path.exists(config.PHOTOS_JSON):
-        return []
-    try:
-        with open(config.PHOTOS_JSON, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            return data if isinstance(data, list) else []
-    except (json.JSONDecodeError, OSError):
-        return []
+def decorate(photos, thumb_width=600):
+    """Aggiunge a ogni foto l'URL immagine (miniatura e originale compresso)."""
+    for p in photos:
+        p["url"] = store.url(p, width=thumb_width)
+        p["full_url"] = store.url(p)
+    return photos
 
 
-def save_photos(photos):
-    tmp = config.PHOTOS_JSON + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(photos, f, ensure_ascii=False, indent=2)
-    os.replace(tmp, config.PHOTOS_JSON)
+def public_photo(p):
+    """Campi salvabili nel backup ZIP (senza URL temporanei)."""
+    return {k: p.get(k, "") for k in ("id", "filename", "name", "momento", "caption", "datetime")}
 
 
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
         if config.REQUIRE_EVENT_PASSWORD and not session.get("authed"):
-            # Le chiamate fetch si aspettano JSON, non un redirect HTML
             if request.path.startswith("/api/"):
                 return jsonify({"ok": False, "error": "login_required"}), 401
-            # rimanda al form password mantenendo la destinazione
             return redirect(url_for("upload", next=request.path))
         return view(*args, **kwargs)
     return wrapped
@@ -82,38 +76,23 @@ def admin_required(view):
 
 
 def make_qr_image(url):
-    qr = qrcode.QRCode(box_size=10, border=4)  # border >= 4 moduli per scansione sicura
+    qr = qrcode.QRCode(box_size=10, border=4)
     qr.add_data(url)
     qr.make(fit=True)
     return qr.make_image(fill_color="#2E2E2E", back_color="white").convert("RGB")
 
 
-def compress_and_save(file_storage):
-    """Ridimensiona lato max 1920px, salva JPEG 85%. Ritorna filename."""
+def compress_to_bytes(file_storage):
+    """Ridimensiona lato max 1920px e comprime in JPEG. Ritorna (bytes, nome base)."""
     img = Image.open(file_storage.stream)
-    img = ImageOps.exif_transpose(img)  # rispetta orientamento scatto cellulare
+    img = ImageOps.exif_transpose(img)
     if img.mode in ("RGBA", "LA", "P"):
         img = img.convert("RGB")
     img.thumbnail((config.MAX_SIDE, config.MAX_SIDE), Image.LANCZOS)
-    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    rand = f"{random.randint(1000, 9999)}"
+    buf = io.BytesIO()
+    img.save(buf, "JPEG", quality=config.JPEG_QUALITY, optimize=True)
     base = secure_filename(os.path.splitext(file_storage.filename or "foto")[0])[:30] or "foto"
-    filename = f"{stamp}_{rand}_{base}.jpg"
-    dest = os.path.join(config.UPLOAD_FOLDER, filename)
-    img.save(dest, "JPEG", quality=config.JPEG_QUALITY, optimize=True)
-    return filename
-
-
-def storage_size():
-    total = 0
-    try:
-        for name in os.listdir(config.UPLOAD_FOLDER):
-            p = os.path.join(config.UPLOAD_FOLDER, name)
-            if os.path.isfile(p):
-                total += os.path.getsize(p)
-    except OSError:
-        pass
-    return total
+    return buf.getvalue(), base
 
 
 def human_size(n):
@@ -159,12 +138,11 @@ def qr_download():
     return send_file(buf, mimetype="image/png", as_attachment=True, download_name="qr-matrimonio.png")
 
 
-# ---------- Upload (protetto da password evento) ----------
+# ---------- Upload ----------
 
 @app.route("/upload", methods=["GET", "POST"])
 def upload():
     if request.method == "POST" and "password" in request.form and "photos" not in request.files:
-        # Tentativo di login evento (solo se la password è attiva)
         if not config.REQUIRE_EVENT_PASSWORD:
             session["authed"] = True
             nxt = request.args.get("next") or request.form.get("next") or url_for("upload")
@@ -184,7 +162,6 @@ def upload():
                                next_url=request.args.get("next", ""))
 
     if request.method == "POST":
-        # Upload vero e proprio (anche via fetch JSON)
         files = request.files.getlist("photos")
         name = (request.form.get("name") or "").strip()[:60]
         momento = (request.form.get("momento") or "").strip()[:60]
@@ -193,31 +170,26 @@ def upload():
             momento = ""
         saved = []
         errors = []
-        with _lock:
-            photos = load_photos()
-            for fs in files:
-                if not fs or not fs.filename:
-                    continue
-                ext = os.path.splitext(fs.filename)[1].lower()
-                if ext not in config.ALLOWED_EXT:
-                    errors.append(f"{fs.filename}: formato non supportato")
-                    continue
-                try:
-                    filename = compress_and_save(fs)
-                except Exception as exc:  # noqa: BLE001 - feedback utente
-                    errors.append(f"{fs.filename}: errore ({exc})")
-                    continue
-                photos.append({
-                    "filename": filename,
+        for fs in files:
+            if not fs or not fs.filename:
+                continue
+            ext = os.path.splitext(fs.filename)[1].lower()
+            if ext not in config.ALLOWED_EXT:
+                errors.append(f"{fs.filename}: formato non supportato")
+                continue
+            try:
+                data, base = compress_to_bytes(fs)
+                photo = store.save(data, base, {
                     "name": name,
                     "momento": momento,
                     "caption": caption,
                     "datetime": datetime.now().isoformat(timespec="seconds"),
+                    "rand": f"{random.randint(1000, 9999)}",
                 })
-                saved.append(filename)
-            photos.sort(key=lambda p: p.get("datetime", ""), reverse=True)
-            save_photos(photos)
-        # Risposta JSON per upload AJAX con progress, altrimenti pagina ringraziamento
+            except Exception as exc:
+                errors.append(f"{fs.filename}: errore ({exc})")
+                continue
+            saved.append(photo.get("filename", ""))
         if request.headers.get("X-Requested-With") == "XMLHttpRequest" or "application/json" in request.headers.get("Accept", ""):
             return jsonify({"ok": True, "saved": saved, "errors": errors, "count": len(saved)})
         return render_template("upload.html", couple=config.COUPLE_NAMES,
@@ -232,7 +204,7 @@ def logout():
     return redirect(url_for("landing"))
 
 
-# ---------- Galleria condivisa ----------
+# ---------- Galleria ----------
 
 @app.route("/gallery")
 @login_required
@@ -247,17 +219,34 @@ def gallery():
 @login_required
 def api_photos():
     momento = request.args.get("momento", "")
-    photos = load_photos()
-    photos.sort(key=lambda p: p.get("datetime", ""), reverse=True)
+    try:
+        photos = store.list_photos()
+    except storage.StorageError:
+        return jsonify({"ok": False, "error": "storage_unavailable"}), 503
+    total = len(photos)
     if momento:
         photos = [p for p in photos if p.get("momento") == momento]
-    return jsonify({"photos": photos, "total": len(load_photos())})
+    payload = {"photos": decorate([dict(p) for p in photos]), "total": total}
+    etag = hashlib.sha1(
+        json.dumps(payload, sort_keys=True, ensure_ascii=False).encode("utf-8")
+    ).hexdigest()
+    if request.headers.get("If-None-Match") == etag:
+        return "", 304, {"ETag": etag}
+    return jsonify(payload), 200, {"ETag": etag}
 
 
 @app.route("/uploads/<path:filename>")
 def serve_upload(filename):
     if config.REQUIRE_EVENT_PASSWORD and not session.get("authed") and not session.get("admin"):
         return redirect(url_for("upload", next=request.path))
+    if store.name == "cloudinary":
+        try:
+            for p in store.list_photos():
+                if p.get("id") == filename or p.get("filename") == filename:
+                    return redirect(store.url(p), code=302)
+        except storage.StorageError:
+            pass
+        return "Foto non trovata", 404
     return send_from_directory(config.UPLOAD_FOLDER, filename)
 
 
@@ -273,15 +262,21 @@ def admin():
                                error="Password admin errata."), 403
     if not session.get("admin"):
         return render_template("admin.html", need_password=True)
-    photos = load_photos()
-    photos.sort(key=lambda p: p.get("datetime", ""), reverse=True)
+    error = None
+    try:
+        photos = decorate(store.list_photos())
+    except storage.StorageError as exc:
+        photos = []
+        error = f"Archivio foto non raggiungibile: {exc}"
     return render_template(
         "admin.html",
         need_password=False,
         total=len(photos),
-        size=human_size(storage_size()),
+        size=human_size(store.storage_bytes()),
+        backend=store.name,
         public_url=get_public_url(),
         photos=photos,
+        error=error,
     )
 
 
@@ -298,33 +293,36 @@ def admin_set_url():
 @app.route("/admin/download")
 @admin_required
 def admin_download():
-    """ZIP di tutte le foto + photos.json (filesystem Render effimero: scaricare spesso!)."""
     buf = io.BytesIO()
-    photos = load_photos()
+    try:
+        photos = store.list_photos()
+    except storage.StorageError:
+        photos = []
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         for p in photos:
-            fp = os.path.join(config.UPLOAD_FOLDER, p.get("filename", ""))
-            if os.path.isfile(fp):
-                z.write(fp, arcname=p.get("filename", ""))
-        z.writestr("photos.json", json.dumps(photos, ensure_ascii=False, indent=2))
+            try:
+                data = store.read(p)
+            except Exception:
+                continue
+            z.writestr(p.get("filename", "foto.jpg"), data)
+        z.writestr("photos.json",
+                   json.dumps([public_photo(p) for p in photos], ensure_ascii=False, indent=2))
     buf.seek(0)
     stamp = datetime.now().strftime("%Y%m%d_%H%M")
     return send_file(buf, mimetype="application/zip", as_attachment=True,
                      download_name=f"matrimonio-foto-{stamp}.zip")
 
 
-@app.route("/admin/delete/<filename>", methods=["POST"])
+@app.route("/admin/delete/<path:photo_id>", methods=["POST"])
 @admin_required
-def admin_delete(filename):
-    filename = secure_filename(filename)
-    with _lock:
-        photos = [p for p in load_photos() if p.get("filename") != filename]
-        save_photos(photos)
-    try:
-        os.remove(os.path.join(config.UPLOAD_FOLDER, filename))
-    except OSError:
-        pass
-    # torna alla galleria se la cancellazione parte da lì
+def admin_delete(photo_id):
+    if store.name == "cloudinary":
+        try:
+            store.delete(photo_id)
+        except storage.StorageError:
+            pass
+    else:
+        store.delete(secure_filename(photo_id))
     ref = request.referrer or ""
     if "/gallery" in ref:
         return redirect(url_for("gallery"))
