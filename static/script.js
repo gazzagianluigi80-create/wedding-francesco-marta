@@ -95,15 +95,23 @@ function initGallery(initialFilter) {
       line1.textContent = p.caption || p.momento || '♥';
       const line2 = document.createElement('div');
       line2.className = 'pol-meta';
-      const d = (p.datetime || '').replace('T', ' ').slice(0, 16);
-      line2.textContent = (p.name || 'Anonimo') + (d ? ' · ' + d : '');
-      cap.appendChild(line1); cap.appendChild(line2);
+      
+      // MODIFICA: Mostra solo il nome se c'è, niente data
+      line2.textContent = p.name || '';
+      
+      cap.appendChild(line1); 
+      if (line2.textContent.trim() !== '') {
+        cap.appendChild(line2);
+      }
+      
       fig.appendChild(img); fig.appendChild(cap);
       fig.onclick = () => {
         document.getElementById('lb-img').src = img.src;
-        document.getElementById('lb-name').textContent = p.name || 'Anonimo';
+        // MODIFICA: Nome solo se c'è, niente data
+        document.getElementById('lb-name').textContent = p.name || '';
         document.getElementById('lb-cap').textContent = p.caption || (p.momento || '');
-        document.getElementById('lb-date').textContent = (p.datetime || '').replace('T', ' ');
+        document.getElementById('lb-date').textContent = ''; // Svuotato per togliere la data
+        
         const del = document.getElementById('lb-del');
         if (del) del.action = '/admin/delete/' + encodeURIComponent(p.filename);
         lb.classList.remove('hidden');
